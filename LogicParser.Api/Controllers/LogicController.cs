@@ -27,6 +27,8 @@ namespace LogicParser.Api.Controllers
                     return BadRequest(new {message = "Request only contain white space or empty"});
                 case ProblemInput.WrongOperation:
                     return BadRequest(new {message = "Request contain some wrong operation"});
+                case ProblemInput.StartOrEndWithBinaryOperation:
+                    return BadRequest(new  {message = "Request can not start or end with a binary operation"});
             }
             var result = await _service.LogicToTruthTable(solved.String);
             if (result == null) return BadRequest(new {message = "Request is in wrong format"});

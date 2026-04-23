@@ -32,14 +32,18 @@ public class LogicService
         int open = 0;
         bool previousLetter = false;
         bool previousOp = false;
-        foreach(var letter in result)
+
+        foreach(var (index,letter) in result.Index())
         {
             if (!char.IsLetter(letter) && !operations.Contains(letter))
             {
                 problem = ProblemInput.WrongOperation;
                 break;
             }
-            if (letter == '(') open += 1;
+            if (letter == '(')  open += 1;
+        
+
+            
             if (letter == ')') open -= 1;
             if (open < 0)
             {
@@ -56,13 +60,15 @@ public class LogicService
                     break;
                 }
             }
-            else
-            {
-                previousLetter = false;
-            }
 
             if (operations[1..5].Contains(letter))
             {
+                if (index > 0 && result[index-1] == '(')
+                {
+                    problem = ProblemInput.StartOrEndWithBinaryOperation;
+                    break;
+                }
+                previousLetter = false;
                 if (!previousOp) previousOp = true;
                 else
                 {
@@ -78,9 +84,11 @@ public class LogicService
 
         if (problem == ProblemInput.Normal && open != 0) problem = ProblemInput.Parenthesis;
 
-        if (string.IsNullOrWhiteSpace(result)) problem = ProblemInput.Nothing;
-        Console.WriteLine($"Normalize Result: {result}");
+        if (string.IsNullOrWhiteSpace(result)) return new NormalizedString{Problem = ProblemInput.Nothing};
+        
 
+        if (operations[1..5].Contains(result[0]) || operations[0..5].Contains(result[^1])) problem = ProblemInput.StartOrEndWithBinaryOperation;
+        Console.WriteLine($"Normalize Result: {result}");
         return new NormalizedString
         {
             String = result,
@@ -89,6 +97,9 @@ public class LogicService
     }
     public async Task<LogicToTruthTableResponse?> LogicToTruthTable(string solved)
     {
+        
+        //&A&B
+
         var stack = new Stack<char>();
         var queue = new Queue<char>();
 
@@ -154,7 +165,7 @@ public class LogicService
         while (true)
         {
             var sol = Solution(queue, dict);
-            cellTable.Add(sol);
+            
             bool found = false;
             foreach (var key in keyList)
             {
@@ -170,6 +181,8 @@ public class LogicService
                     break;
                 }
             }
+            if (sol == null) continue;
+            cellTable.Add(sol);
             if (!found) break;
         }
 
@@ -182,8 +195,14 @@ public class LogicService
 
         return result;
     }
-    static List<bool> Solution(Queue<char> solved, Dictionary<char, bool> dict)
+    static List<bool>? Solution(Queue<char> solved, Dictionary<char, bool> dict)
     {
+        bool valueTest;
+        bool foundT = dict.TryGetValue('T', out valueTest);
+        if (foundT && valueTest != true) return null;
+        bool foundF = dict.TryGetValue('F', out valueTest);
+        if (foundF && valueTest != false) return null;
+
         var stack = new Stack<bool>();
         foreach (var letter in solved)
         {

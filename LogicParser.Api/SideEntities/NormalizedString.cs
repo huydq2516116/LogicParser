@@ -15,5 +15,6 @@ public enum ProblemInput
     TooManyLetter,
     TooManyOperation,
     Nothing,
-    WrongOperation
+    WrongOperation,
+    StartOrEndWithBinaryOperation,
 }
