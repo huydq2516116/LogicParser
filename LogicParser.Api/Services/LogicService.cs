@@ -40,7 +40,16 @@ public class LogicService
                 problem = ProblemInput.WrongOperation;
                 break;
             }
-            if (letter == '(')  open += 1;
+            if (letter == '(')
+            {
+                if (index < result.Length-1 && result[index + 1] == ')')
+                {
+                    problem = ProblemInput.Parenthesis;
+                    break;
+                }
+                open += 1;
+            }  
+            
         
 
             
@@ -63,7 +72,7 @@ public class LogicService
 
             if (operations[1..5].Contains(letter))
             {
-                if (index > 0 && result[index-1] == '(')
+                if ((index > 0 && result[index-1] == '(') || (index < result.Length-1 && result[index+1] == ')'))
                 {
                     problem = ProblemInput.StartOrEndWithBinaryOperation;
                     break;
@@ -155,6 +164,7 @@ public class LogicService
         var dict = new Dictionary<char, bool>();
         foreach (var letter in queue)
         {
+            if (letter == 'T' || letter == 'F') continue;
             if (char.IsLetter(letter)) dict.TryAdd(letter, false);
         }
         var keyList = dict.Keys.ToList();
@@ -181,7 +191,6 @@ public class LogicService
                     break;
                 }
             }
-            if (sol == null) continue;
             cellTable.Add(sol);
             if (!found) break;
         }
@@ -195,21 +204,21 @@ public class LogicService
 
         return result;
     }
-    static List<bool>? Solution(Queue<char> solved, Dictionary<char, bool> dict)
+    static List<bool> Solution(Queue<char> solved, Dictionary<char, bool> dict)
     {
-        bool valueTest;
-        bool foundT = dict.TryGetValue('T', out valueTest);
-        if (foundT && valueTest != true) return null;
-        bool foundF = dict.TryGetValue('F', out valueTest);
-        if (foundF && valueTest != false) return null;
 
         var stack = new Stack<bool>();
         foreach (var letter in solved)
         {
             if (char.IsLetter(letter))
             {
-                bool tryGetResult = dict.TryGetValue(letter, out bool value);
-                if (tryGetResult) stack.Push(value);
+                if (letter == 'T') stack.Push(true);
+                else if (letter == 'F') stack.Push(false);
+                else
+                {
+                    bool tryGetResult = dict.TryGetValue(letter, out bool value);
+                    if (tryGetResult) stack.Push(value);
+                }
                 continue;
             }
             bool first, second;
