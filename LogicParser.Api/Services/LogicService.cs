@@ -1,146 +1,79 @@
 using LogicParser.Api.Request_Response;
-using LogicParser.Api.SideEntities;
 using Microsoft.VisualBasic;
 namespace LogicParser.Api.Services;
 
 public class LogicService
 {
-
-    public async Task<NormalizedString> Normalize(string raw)
+    public async Task<List<string>?> Tokenize(string raw)
     {
+        //AB && CD || EF -> GH
 
-        List<char> operations = ['-', '&', '|', '>', '=', '(', ')'];
-        string result = string.Empty;
-        string current = string.Empty;
-        foreach (var letter in raw)
+        List<string> operations = ["<=>", "->", "&&", "||", "-", "(", ")"];
+        var result = new List<string>();
+        var current = string.Empty;
+        int i = 0;
+        while (i < raw.Length)
         {
-            if (operations.Contains(letter))
-            {
-                current = current.Trim();
-                result += current;
-                current = string.Empty;
-                result += letter;
-            }
-            else
+            var letter = raw[i];
+            if (char.IsLetter(letter) || char.IsWhiteSpace(letter))
             {
                 current += letter;
+                i++;
+                continue;
             }
+            current = current.Trim();
+            if (current != string.Empty) result.Add(current);
+
+            current = string.Empty;
+
+            var matchedOp = operations
+            .FirstOrDefault(op => raw.AsSpan(i).StartsWith(op));
+
+            if (matchedOp == null) return null;
+            i += matchedOp.Length;
+            result.Add(matchedOp);
         }
+
         current = current.Trim();
-        result += current;
-        var problem = ProblemInput.Normal;
-        int open = 0;
-        bool previousLetter = false;
-        bool previousOp = false;
+        if (current != string.Empty) result.Add(current);
 
-        foreach(var (index,letter) in result.Index())
+
+        foreach (var s in result)
         {
-            if (!char.IsLetter(letter) && !operations.Contains(letter))
-            {
-                problem = ProblemInput.WrongOperation;
-                break;
-            }
-            if (letter == '(')
-            {
-                if (index < result.Length-1 && result[index + 1] == ')')
-                {
-                    problem = ProblemInput.Parenthesis;
-                    break;
-                }
-                open += 1;
-            }  
-            
-        
-
-            
-            if (letter == ')') open -= 1;
-            if (open < 0)
-            {
-                problem = ProblemInput.Parenthesis;
-                break;
-            }
-
-            if (char.IsLetter(letter))
-            {
-                if (!previousLetter) previousLetter = true;
-                else
-                {
-                    problem = ProblemInput.TooManyLetter;
-                    break;
-                }
-            }
-
-            if (operations[1..5].Contains(letter))
-            {
-                if ((index > 0 && result[index-1] == '(') || (index < result.Length-1 && result[index+1] == ')'))
-                {
-                    problem = ProblemInput.StartOrEndWithBinaryOperation;
-                    break;
-                }
-                previousLetter = false;
-                if (!previousOp) previousOp = true;
-                else
-                {
-                    problem = ProblemInput.TooManyOperation;
-                    break;
-                }
-            }
-            else
-            {
-                previousOp = false;
-            }
+            Console.Write($"_{s}_ ");
         }
 
-        if (problem == ProblemInput.Normal && open != 0) problem = ProblemInput.Parenthesis;
-
-        if (string.IsNullOrWhiteSpace(result)) return new NormalizedString{Problem = ProblemInput.Nothing};
-        
-
-        if (operations[1..5].Contains(result[0]) || operations[0..5].Contains(result[^1])) problem = ProblemInput.StartOrEndWithBinaryOperation;
-        Console.WriteLine($"Normalize Result: {result}");
-        return new NormalizedString
-        {
-            String = result,
-            Problem = problem
-        };
+        return result;
     }
-    public async Task<LogicToTruthTableResponse?> LogicToTruthTable(string solved)
+    public async Task<LogicToTruthTableResponse?> LogicToTruthTable(List<string> tokens)
     {
-        
-        //&A&B
+        var stack = new Stack<string>();
+        var queue = new Queue<string>();
 
-        var stack = new Stack<char>();
-        var queue = new Queue<char>();
-
-        foreach (var letter in solved)
+        //Queue: A(
+        //Stack: &&  &&
+        foreach (var token in tokens)
         {
-            if (char.IsLetter(letter))
+            if (char.IsLetter(token[0]))
             {
-                queue.Enqueue(letter);
-                if (stack.Count > 0 && stack.Peek() == '-')
-                {
-                    queue.Enqueue(stack.Pop());
-                }
-            }
-            else if (letter == '-')
-            {
-                stack.Push(letter);
+                queue.Enqueue(token);
+                if (stack.Count > 0 && stack.Peek() == "-") queue.Enqueue(stack.Pop());
             }
             else
             {
-                if (stack.Count > 0 && Level(letter) <= Level(stack.Peek()) && letter != '(' && letter != ')')
-                { queue.Enqueue(stack.Pop()); }
-
-                stack.Push(letter);
-                if (letter == ')')
+                if (stack.TryPeek(out var peek))
+                    if (Level(token) >= Level(peek) && peek != "(")
+                        queue.Enqueue(stack.Pop());
+                stack.Push(token);
+                if (token == ")")
                 {
                     for (int i = stack.Count - 1; i >= 0; i--)
                     {
                         var pop = stack.Pop();
-                        if (pop == '(') break;
-                        if (pop != ')') queue.Enqueue(pop);
+                        if (pop == "(") break;
+                        if (pop != ")") queue.Enqueue(pop);
                     }
-                    if (stack.Count > 0 && stack.Peek() == '-') queue.Enqueue(stack.Pop());
+                    if (stack.Count > 0 && stack.Peek() == "-") queue.Enqueue(stack.Pop());
                 }
             }
         }
@@ -148,34 +81,36 @@ public class LogicService
         {
             queue.Enqueue(stack.Pop());
         }
-        
+
         for (int i = stack.Count - 1; i >= 0; i--)
         {
             var pop = stack.Pop();
-            if (pop != ')' && pop != '(') queue.Enqueue(pop);
+            if (pop != ")" && pop != "(") queue.Enqueue(pop);
         }
         if (queue.Count <= 0) return null;
         Console.Write("Shunting yard result: ");
         foreach (var letter in queue)
         {
-            Console.Write(letter);
+            Console.Write($"_{letter}_");
         }
         Console.Write("\n");
-        var dict = new Dictionary<char, bool>();
+        var dict = new Dictionary<string, bool>();
         foreach (var letter in queue)
         {
-            if (letter == 'T' || letter == 'F') continue;
-            if (char.IsLetter(letter)) dict.TryAdd(letter, false);
+            if (letter == "T" || letter == "F") continue;
+            if (char.IsLetter(letter[0])) dict.TryAdd(letter, false);
         }
         var keyList = dict.Keys.ToList();
         keyList = [.. keyList.OrderByDescending(key => key)];
+
+
 
         var cellTable = new List<List<bool>>();
 
         while (true)
         {
             var sol = Solution(queue, dict);
-            
+
             bool found = false;
             foreach (var key in keyList)
             {
@@ -191,29 +126,31 @@ public class LogicService
                     break;
                 }
             }
+            if (sol == null) return null;
             cellTable.Add(sol);
             if (!found) break;
         }
 
-
+        keyList.Reverse();
         var result = new LogicToTruthTableResponse
         {
             Result = cellTable,
+            Prepositions = keyList
         };
 
 
         return result;
     }
-    static List<bool> Solution(Queue<char> solved, Dictionary<char, bool> dict)
+    static List<bool>? Solution(Queue<string> solved, Dictionary<string, bool> dict)
     {
 
         var stack = new Stack<bool>();
         foreach (var letter in solved)
         {
-            if (char.IsLetter(letter))
+            if (char.IsLetter(letter[0]))
             {
-                if (letter == 'T') stack.Push(true);
-                else if (letter == 'F') stack.Push(false);
+                if (letter == "T") stack.Push(true);
+                else if (letter == "F") stack.Push(false);
                 else
                 {
                     bool tryGetResult = dict.TryGetValue(letter, out bool value);
@@ -224,34 +161,43 @@ public class LogicService
             bool first, second;
             switch (letter)
             {
-                case '-':
-                    second = stack.Pop();
-                    stack.Push(!second);
-                    break;
-                case '&':
-                    second = stack.Pop();
-                    first = stack.Pop();
-                    if (second && first) stack.Push(true);
-                    else stack.Push(false);
-                    break;
-                case '|':
-                    second = stack.Pop();
-                    first = stack.Pop();
-                    if (second || first) stack.Push(true);
-                    else stack.Push(false);
-                    break;
-                case '>':
-                    second = stack.Pop();
-                    first = stack.Pop();
-                    if (second || !first) stack.Push(true);
-                    else stack.Push(false);
-                    break;
-                case '=':
-                    second = stack.Pop();
-                    first = stack.Pop();
-                    if (second == first) stack.Push(true);
-                    else stack.Push(false);
-                    break;
+                case "-":
+                    if (stack.TryPop(out second))
+                    {
+                        stack.Push(!second);
+                        break;
+                    }
+                    return null;
+                case "&&":
+                    if (stack.TryPop(out second) && stack.TryPop(out first))
+                    {
+                        stack.Push(first && second);
+                        break;
+                    }
+                    return null;
+                case "||":
+                    if (stack.TryPop(out second) && stack.TryPop(out first))
+                    {
+                        stack.Push(first || second);
+                        break;
+                    }
+                    return null;
+                case "->":
+                    if (stack.TryPop(out second) && stack.TryPop(out first))
+                    {
+                        stack.Push(first && !second);
+                        break;
+                    }
+                    return null;
+                case "<=>":
+                    if (stack.TryPop(out second) && stack.TryPop(out first))
+                    {
+                        stack.Push(first == second);
+                        break;
+                    }
+                    return null;
+                default:
+                    return null;
             }
 
         }
@@ -263,17 +209,23 @@ public class LogicService
         }
         var sol = stack.Pop();
         result.Add(sol);
-        if (stack.Count != 0) Console.WriteLine("Stack is still left, somehow");
+        if (stack.Count != 0)
+        {
+            Console.WriteLine("Stack is still left");
+            return null;
+        }
+
         return result;
     }
-    static int Level(char operation)
+    static int Level(string operation)
     {
         return operation switch
         {
-            '&' => 1,
-            '|' => 2,
-            '>' => 3,
-            '=' => 4,
+            "-" => 1,
+            "&&" => 2,
+            "||" => 3,
+            "->" => 4,
+            "<=>" => 5,
             _ => 0,
         };
     }

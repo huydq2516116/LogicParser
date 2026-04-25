@@ -1,6 +1,4 @@
 using System;
-using LogicParser.Api.SideEntities;
-
 namespace LogicParser.Api.Request_Response;
 
 public class LogicToTruthTableResponse
@@ -12,5 +10,5 @@ public class LogicToTruthTableResponse
     } 
     public int RowCount => Result.Count;
     public List<List<bool>> Result{get; set;} = [];
-    
+    public List<string>? Prepositions{get; set;} 
 }
