@@ -1,6 +1,5 @@
 using LogicParser.Api.Request_Response;
 using LogicParser.Api.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LogicParser.Api.Controllers
@@ -25,7 +24,7 @@ namespace LogicParser.Api.Controllers
         [HttpPost("/truth-to-logic")]
         public async Task<IActionResult> TruthTableToLogic([FromBody] TruthTableToLogicRequest request)
         {
-            var result = await _service.Solve(request);
+            var result = await _service.TruthTableToLogic(request);
             return Ok(result);
         }
     }
