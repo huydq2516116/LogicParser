@@ -12,12 +12,7 @@ namespace LogicParser.Api.Controllers
         [HttpPost("/logic-to-truth")]
         public async Task<IActionResult> LogicToTruthTable([FromBody] LogicToTruthTableRequest request)
         {
-            var tokens = await _service.Tokenize(request.Raw);
-            if (tokens == null)
-            {
-                return BadRequest(new {message = "Request contain some unknown operations"});
-            }
-            var result = await _service.LogicToTruthTable(tokens);
+            var result = await _service.LogicToTruthTable(request.Raw);
             if (result == null) return BadRequest(new {message = "Request is in wrong format"});
             return Ok(result);
         }
@@ -26,6 +21,11 @@ namespace LogicParser.Api.Controllers
         {
             var result = await _service.TruthTableToLogic(request);
             return Ok(result);
+        }
+        [HttpPost("/solve-logic")]
+        public async Task<IActionResult> SolveLogic([FromBody] SolveLogicRequest request)
+        {
+            return Ok();
         }
     }
 }

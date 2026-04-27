@@ -4,6 +4,124 @@ namespace LogicParser.Api.Services;
 
 public static class LogicStatic
 {
+    public static List<string>? Tokenize(string raw)
+    {
+        List<string> operations = ["<=>", "->", "&&", "||", "-", "(", ")"];
+        var result = new List<string>();
+        var current = string.Empty;
+        int i = 0;
+        while (i < raw.Length)
+        {
+            var letter = raw[i];
+            if (char.IsLetter(letter) || char.IsWhiteSpace(letter))
+            {
+                current += letter;
+                i++;
+                continue;
+            }
+            current = current.Trim();
+            if (current != string.Empty) result.Add(current);
+
+            current = string.Empty;
+
+            var matchedOp = operations
+            .FirstOrDefault(op => raw.AsSpan(i).StartsWith(op));
+
+            if (matchedOp == null) return null;
+            i += matchedOp.Length;
+            result.Add(matchedOp);
+        }
+
+        current = current.Trim();
+        if (current != string.Empty) result.Add(current);
+
+
+        foreach (var s in result)
+        {
+            Console.Write($"_{s}_ ");
+        }
+
+        return result;
+    }
+    public static Queue<string>? ShuntingYard(List<string> tokens)
+    {
+        var stack = new Stack<string>();
+        var queue = new Queue<string>();
+        foreach (var token in tokens)
+        {
+            if (char.IsLetter(token[0]))
+            {
+                queue.Enqueue(token);
+                if (stack.Count > 0 && stack.Peek() == "-") queue.Enqueue(stack.Pop());
+            }
+            else
+            {
+                if (stack.TryPeek(out var peek))
+                    if (LogicStatic.Level(token) >= LogicStatic.Level(peek) && peek != "(")
+                        queue.Enqueue(stack.Pop());
+                stack.Push(token);
+                if (token == ")")
+                {
+                    for (int i = stack.Count - 1; i >= 0; i--)
+                    {
+                        var pop = stack.Pop();
+                        if (pop == "(") break;
+                        if (pop != ")") queue.Enqueue(pop);
+                    }
+                    if (stack.Count > 0 && stack.Peek() == "-") queue.Enqueue(stack.Pop());
+                }
+            }
+        }
+        while (stack.Count > 0)
+        {
+            queue.Enqueue(stack.Pop());
+        }
+
+        for (int i = stack.Count - 1; i >= 0; i--)
+        {
+            var pop = stack.Pop();
+            if (pop != ")" && pop != "(") queue.Enqueue(pop);
+        }
+        if (queue.Count <= 0) return null;
+        return queue;
+    }
+    public static List<string>? PostShuntingYard(List<List<bool>> cellTable, Queue<string> queue)
+    {
+        var dict = new Dictionary<string, bool>();
+        foreach (var letter in queue)
+        {
+            if (letter == "T" || letter == "F") continue;
+            if (char.IsLetter(letter[0])) dict.TryAdd(letter, false);
+        }
+        var keyList = dict.Keys.ToList();
+        keyList = [.. keyList.OrderByDescending(key => key)];
+        while (true)
+        {
+            var sol = Solution(queue, dict);
+
+            bool found = false;
+            foreach (var key in keyList)
+            {
+                if (dict[key] == false)
+                {
+                    found = true;
+                    dict[key] = true;
+                    foreach (var k in keyList)
+                    {
+                        if (k == key) break;
+                        dict[k] = false;
+                    }
+                    break;
+                }
+            }
+            if (sol == null) return null;
+            cellTable.Add(sol);
+            if (!found) break;
+        }
+
+        keyList.Reverse();
+        return keyList;
+    }
     public static List<bool>? Solution(Queue<string> solved, Dictionary<string, bool> dict)
     {
 
@@ -48,7 +166,7 @@ public static class LogicStatic
                 case "->":
                     if (stack.TryPop(out second) && stack.TryPop(out first))
                     {
-                        stack.Push(first && !second);
+                        stack.Push(!first || second);
                         break;
                     }
                     return null;
@@ -92,7 +210,6 @@ public static class LogicStatic
             _ => 0,
         };
     }
-
     public static List<string> GetPrimeImplicants(List<int> minterms, int n)
     {
         var groups = new Dictionary<int, List<string>>();
@@ -171,7 +288,6 @@ public static class LogicStatic
 
         return primeImplicants.ToList();
     }
-
     public static List<string> SelectImplicants(List<string> implicants, List<int> minterms)
     {
         var covered = new HashSet<int>();
@@ -213,7 +329,6 @@ public static class LogicStatic
 
         return result;
     }
-
     public static bool Covers(string implicant, int minterm)
     {
         string bin = Convert.ToString(minterm, 2).PadLeft(implicant.Length, '0');
@@ -229,7 +344,6 @@ public static class LogicStatic
 
         return true;
     }
-
     public static string ToExpression(string pattern, List<string> names)
     {
         var parts = new List<string>();
