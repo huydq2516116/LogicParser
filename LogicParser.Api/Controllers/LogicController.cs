@@ -25,7 +25,9 @@ namespace LogicParser.Api.Controllers
         [HttpPost("/solve-logic")]
         public async Task<IActionResult> SolveLogic([FromBody] SolveLogicRequest request)
         {
-            return Ok();
+            var result = await _service.SolveLogic(request.Statements, request.KnowledgeBase);
+            if (result == null) return BadRequest(new {message = "Wrong Format"});
+            return Ok(result);
         }
     }
 }

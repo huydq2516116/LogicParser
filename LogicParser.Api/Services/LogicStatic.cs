@@ -198,7 +198,7 @@ public static class LogicStatic
 
         return result;
     }
-    public static int Level(string operation)
+    static int Level(string operation)
     {
         return operation switch
         {
