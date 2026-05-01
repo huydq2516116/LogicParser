@@ -57,7 +57,7 @@ public static class LogicStatic
             else
             {
                 if (stack.TryPeek(out var peek))
-                    if (LogicStatic.Level(token) >= LogicStatic.Level(peek) && peek != "(")
+                    if (Level(token) >= Level(peek) && peek != "(")
                         queue.Enqueue(stack.Pop());
                 stack.Push(token);
                 if (token == ")")
@@ -136,6 +136,7 @@ public static class LogicStatic
                 {
                     bool tryGetResult = dict.TryGetValue(letter, out bool value);
                     if (tryGetResult) stack.Push(value);
+                    else return null;
                 }
                 continue;
             }
@@ -188,8 +189,9 @@ public static class LogicStatic
             var cell = pair.Value;
             result.Add(cell);
         }
-        var sol = stack.Pop();
-        result.Add(sol);
+        var tryFinalPop = stack.TryPop(out bool sol);
+        if (tryFinalPop) result.Add(sol);
+        else return null;
         if (stack.Count != 0)
         {
             Console.WriteLine("Stack is still left");

@@ -25,7 +25,15 @@ namespace LogicParser.Api.Controllers
         [HttpPost("/solve-logic")]
         public async Task<IActionResult> SolveLogic([FromBody] SolveLogicRequest request)
         {
-            var result = await _service.SolveLogic(request.Statements, request.KnowledgeBase);
+            var statements = new List<string>();
+            foreach(var s in request.Statements)
+            {
+                var tmp = s.Trim();
+                if (tmp == string.Empty) return BadRequest(new {message  = "Statement can not be empty"});
+                if (tmp == "T" || tmp == "F") return BadRequest(new {message  = $"Statement can not be {tmp}"});
+                statements.Add(tmp);
+            }
+            var result = await _service.SolveLogic(statements, request.KnowledgeBase);
             if (result == null) return BadRequest(new {message = "Wrong Format"});
             return Ok(result);
         }

@@ -26,8 +26,9 @@ public class SolveLogicRequest: IValidatableObject
                     $"Statements bị trùng: {string.Join(", ", duplicates)}",
                     [nameof(Statements)]
                 );
-            }
+            } 
         }
+        
     }
 }
 
