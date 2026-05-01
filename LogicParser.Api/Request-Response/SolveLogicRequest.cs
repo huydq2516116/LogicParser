@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using LogicParser.Api.SideEntities;
 
 namespace LogicParser.Api.Request_Response;
 
@@ -32,10 +33,4 @@ public class SolveLogicRequest: IValidatableObject
     }
 }
 
-public class KnowledgeBase
-{
-    [Required]
-    public string Knowledge{get; set;} = string.Empty;
-    [Required]
-    public bool Value{get; set;}
-}
+

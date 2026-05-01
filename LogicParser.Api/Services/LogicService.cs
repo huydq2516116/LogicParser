@@ -1,8 +1,12 @@
+using LogicParser.Api.Data;
 using LogicParser.Api.Request_Response;
+using LogicParser.Api.SideEntities;
 namespace LogicParser.Api.Services;
 
-public class LogicService
+public class LogicService(LogicParserContext context)
 {
+    private readonly LogicParserContext _context = context;
+
     public async Task<LogicToTruthTableResponse?> LogicToTruthTable(string raw)
     {
         var tokens = LogicStatic.Tokenize(raw);
@@ -25,7 +29,6 @@ public class LogicService
             Prepositions = keyList
         };
     }
-
     public async Task<TruthTableToLogicResponse> TruthTableToLogic(TruthTableToLogicRequest request)
     {
         int n = request.Variables;
@@ -147,7 +150,4 @@ public class LogicService
             Prepositions = keyList,
         };
     }
-
-
-
 }

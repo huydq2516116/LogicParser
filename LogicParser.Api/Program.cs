@@ -1,9 +1,14 @@
+using LogicParser.Api.Data;
 using LogicParser.Api.Services;
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddScoped<LogicService>();
 builder.Services.AddControllers();
+
+builder.Services.AddDbContext<LogicParserContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddOpenApi();
 
