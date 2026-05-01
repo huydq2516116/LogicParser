@@ -72,7 +72,7 @@ public class LogicService
             Answer = expression
         };
     }
-    public async Task<SolveLogicResponse?> SolveLogic(List<string> statements, Dictionary<string, bool> knowledgeBase)
+    public async Task<SolveLogicResponse?> SolveLogic(List<string> statements, List<KnowledgeBase> knowledgeBase)
     {
         var list = new List<List<bool>>();
         var dict = new Dictionary<string, bool>();
@@ -106,9 +106,9 @@ public class LogicService
         }
 
 
-        foreach (var pair in knowledgeBase)
+        foreach (var k in knowledgeBase)
         {
-            var tokens = LogicStatic.Tokenize(pair.Key);
+            var tokens = LogicStatic.Tokenize(k.Knowledge);
             if (tokens == null) return null;
             var queue = LogicStatic.ShuntingYard(tokens);
             if (queue == null) return null;
@@ -123,9 +123,9 @@ public class LogicService
                 }
                 var sol = LogicStatic.Solution(queue, dict);
                 if (sol == null) return null;
-                if (sol.LastOrDefault() == pair.Value)
+                if (sol.LastOrDefault() == k.Value)
                 {
-                    Console.WriteLine($"Testing At {pair.Key}:");
+                    Console.WriteLine($"Testing At {k.Knowledge}:");
                     foreach(var kvp in dict)
                     {
                         Console.WriteLine($"Key: {kvp.Key}, Value: {kvp.Value}");
@@ -135,6 +135,7 @@ public class LogicService
             }
             list = tmpList;
         }
+        keyList.Reverse();
         return new SolveLogicResponse
         {
             Result = list,

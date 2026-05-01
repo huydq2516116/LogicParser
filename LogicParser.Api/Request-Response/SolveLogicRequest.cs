@@ -7,7 +7,7 @@ public class SolveLogicRequest: IValidatableObject
     [Required]
     public List<string> Statements{get; set;} = [];
     [Required]
-    public Dictionary<string,bool> KnowledgeBase{get; set;} = [];
+    public List<KnowledgeBase> KnowledgeBase{get; set;} = [];
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
@@ -28,23 +28,13 @@ public class SolveLogicRequest: IValidatableObject
                 );
             }
         }
-
-        // Optional: check duplicate keys ignoring case
-        if (KnowledgeBase != null)
-        {
-            var duplicates = KnowledgeBase.Keys
-                .GroupBy(k => k.ToLower())
-                .Where(g => g.Count() > 1)
-                .Select(g => g.Key)
-                .ToList();
-
-            if (duplicates.Count != 0)
-            {
-                yield return new ValidationResult(
-                    $"KnowledgeBase có key trùng (ignore case): {string.Join(", ", duplicates)}",
-                    [nameof(KnowledgeBase)]
-                );
-            }
-        }
     }
+}
+
+public class KnowledgeBase
+{
+    [Required]
+    public string Knowledge{get; set;} = string.Empty;
+    [Required]
+    public bool Value{get; set;}
 }
