@@ -1,4 +1,5 @@
 using LogicParser.Api.Data;
+using LogicParser.Api.Entities;
 using LogicParser.Api.Request_Response;
 using LogicParser.Api.SideEntities;
 namespace LogicParser.Api.Services;
@@ -149,5 +150,15 @@ public class LogicService(LogicParserContext context)
             Result = list,
             Prepositions = keyList,
         };
+    }
+    public async Task<bool> SaveSolveLogicToDb(List<KnowledgeBase> knowledgeBase, SolveLogicResponse response)
+    {
+        var result = new SolveLogicSave
+        {
+            Variables = response.Prepositions ?? [],
+            Clauses = knowledgeBase,
+            
+        };
+        return false;
     }
 }

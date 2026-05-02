@@ -8,9 +8,6 @@ public class SolveLogicSave
 {
     public Guid Id{get; set;} = Guid.NewGuid();
     public Guid UserId{get; set;}
-    public int VariableCount{get; set;} 
-    public int ClauseCount{get; set;}
-    public int ResultCount{get; set;}
     public List<string> Variables{get; set;} = []; 
     public List<KnowledgeBase> Clauses{get; set;} = []; 
     public List<string> Result{get; set;} = []; 
