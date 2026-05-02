@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using LogicParser.Api.Request_Response;
 using LogicParser.Api.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +14,7 @@ namespace LogicParser.Api.Controllers
         public async Task<IActionResult> LogicToTruthTable([FromBody] LogicToTruthTableRequest request)
         {
             var result = await _service.LogicToTruthTable(request.Raw);
-            if (result == null) return BadRequest(new {message = "Request is in wrong format"});
+            if (result == null) return BadRequest(new { message = "Request is in wrong format" });
             return Ok(result);
         }
         [HttpPost("/truth-to-logic")]
@@ -26,16 +27,22 @@ namespace LogicParser.Api.Controllers
         public async Task<IActionResult> SolveLogic([FromBody] SolveLogicRequest request)
         {
             var statements = new List<string>();
-            foreach(var s in request.Statements)
+            foreach (var s in request.Statements)
             {
                 var tmp = s.Trim();
-                if (tmp == string.Empty) return BadRequest(new {message  = "Statement can not be empty"});
-                if (tmp == "T" || tmp == "F") return BadRequest(new {message  = $"Statement can not be {tmp}"});
+                if (tmp == string.Empty) return BadRequest(new { message = "Statement can not be empty" });
+                if (tmp == "T" || tmp == "F") return BadRequest(new { message = $"Statement can not be {tmp}" });
                 statements.Add(tmp);
             }
             var result = await _service.SolveLogic(statements, request.KnowledgeBase);
-            if (result == null) return BadRequest(new {message = "Wrong Format"});
-            return Ok(result);
+            if (result == null) return BadRequest(new { message = "Wrong Format" });
+            foreach (var claim in User.Claims)
+            {
+                Console.WriteLine($"{claim.Type} = {claim.Value}");
+            }
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var saveResult = await _service.SaveSolveLogicToDb(request.KnowledgeBase, result, userId);
+            return Ok(new { Result = result, Save = saveResult });
         }
     }
 }

@@ -14,7 +14,7 @@ builder.Services.AddControllers();
 builder.Services.AddDbContext<LogicParserContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-var key = "your-secret-key-123"; // nên dài và random hơn
+var key = "iloveyou3000ormaybenotidon'treallyknowwhyidoythisyeahrandomspamletsgohehehe"; // nên dài và random hơn
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

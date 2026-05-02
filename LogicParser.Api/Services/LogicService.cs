@@ -87,22 +87,22 @@ public class LogicService(LogicParserContext context)
         }
         var keyList = dict.Keys.ToList();
         keyList = [.. keyList.OrderByDescending(key => key)];
-        
+
         var boolList = new List<bool>();
-        for (int i=0; i<statements.Count; i++) boolList.Add(false);
+        for (int i = 0; i < statements.Count; i++) boolList.Add(false);
         while (true)
         {
             var tmpList = new List<bool>();
-            for (int i=0; i<statements.Count; i++) tmpList.Add(boolList[i]);
+            for (int i = 0; i < statements.Count; i++) tmpList.Add(boolList[i]);
             list.Add(tmpList);
             bool found = false;
-            for (int i=0; i<statements.Count; i++)
+            for (int i = 0; i < statements.Count; i++)
             {
                 if (!boolList[i])
                 {
                     found = true;
                     boolList[i] = true;
-                    for (int j = i-1; j>=0; j--)  boolList[j] = false;
+                    for (int j = i - 1; j >= 0; j--) boolList[j] = false;
                     break;
                 }
             }
@@ -121,7 +121,7 @@ public class LogicService(LogicParserContext context)
             foreach (var lb in list)
             {
                 if (dict.Count != lb.Count) return null;
-                for(int i=0; i<statements.Count; i++)
+                for (int i = 0; i < statements.Count; i++)
                 {
                     dict[keyList[i]] = lb[i];
                 }
@@ -130,7 +130,7 @@ public class LogicService(LogicParserContext context)
                 if (sol.LastOrDefault() == k.Value)
                 {
                     Console.WriteLine($"Testing At {k.Knowledge}:");
-                    foreach(var kvp in dict)
+                    foreach (var kvp in dict)
                     {
                         Console.WriteLine($"Key: {kvp.Key}, Value: {kvp.Value}");
                     }
@@ -140,7 +140,7 @@ public class LogicService(LogicParserContext context)
             list = tmpList;
         }
 
-        for (int i=0; i<list.Count; i++)
+        for (int i = 0; i < list.Count; i++)
         {
             list[i].Reverse();
         }
@@ -151,14 +151,52 @@ public class LogicService(LogicParserContext context)
             Prepositions = keyList,
         };
     }
-    public async Task<bool> SaveSolveLogicToDb(List<KnowledgeBase> knowledgeBase, SolveLogicResponse response)
+    public async Task<bool> SaveSolveLogicToDb(List<KnowledgeBase> knowledgeBase, SolveLogicResponse response, string? userIDstr)
+
     {
+        if (userIDstr == null)
+        {
+            Console.Write("UserID is null");
+            return false;
+        }
+        var parseSuccess = Guid.TryParse(userIDstr, out Guid userID);
+        if (parseSuccess)
+        {
+            var user = await _context.Users.FindAsync(userID);
+            if (user == null)
+            {
+                Console.Write("User is null");
+                return false;
+            }
+        }
+        else return false;
+
+
+        var listString = new List<string>();
+        foreach (var lb in response.Result)
+        {
+            if (lb == null) return false;
+            var str = string.Empty;
+            foreach (var b in lb)
+            {
+                var num = b ? 1 : 0;
+                str += num;
+            }
+            listString.Add(str);
+        }
+
         var result = new SolveLogicSave
         {
+            UserId = userID,
             Variables = response.Prepositions ?? [],
             Clauses = knowledgeBase,
-            
+            Result = listString
         };
-        return false;
+
+        await _context.Saves.AddAsync(result);
+        await _context.SaveChangesAsync();
+
+
+        return true;
     }
 }

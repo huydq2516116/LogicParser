@@ -57,7 +57,7 @@ public class UserService(LogicParserContext context)
     };
 
     var key = new SymmetricSecurityKey(
-        Encoding.UTF8.GetBytes("your-secret-key-123")
+        Encoding.UTF8.GetBytes("iloveyou3000ormaybenotidon'treallyknowwhyidoythisyeahrandomspamletsgohehehe")
     );
 
     var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
